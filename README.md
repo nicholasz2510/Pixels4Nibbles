@@ -9,6 +9,7 @@ When a person donates food, they place the food item in a chute with an ultrason
 
 ## Credits
 * [r/place](https://www.reddit.com/r/place/) for the inspiration and color palette
+* This project would not be possible were it not for open-source projects such as Python and TKinter
 
 This project was created for the Skyline High School Technology Student Association's 2022 community service project.
 
