@@ -8,5 +8,5 @@ with open("history/history.pkl", 'rb') as f:
     except EOFError:
         pass
 
-for board_state in data:
-    print(board_state)
+print("# of states stored: " + str(len(data)))
+# TODO implement timelapse generation with PIL and ffmpeg

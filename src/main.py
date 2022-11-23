@@ -30,7 +30,7 @@ def update_history():
 
 window = tk.Tk()
 window.attributes("-fullscreen", True)
-window.title("Food for Pixels")
+window.title("Pixels4Nibbles")
 
 height = window.winfo_screenheight()
 screen_width = window.winfo_screenwidth()
@@ -177,7 +177,7 @@ window.bind("<space>", sensed)  # mock with space bar for sensor detecting food
 #         dist = distance()
 #         print("Measured Distance = %.1f cm" % dist)
 #         time.sleep(0.05)
-#
+# TODO actually figure out how to parse sensor data once the sensor arrives
 #
 # thread = threading.Thread(target=run_tk)
 # thread.daemon = True
