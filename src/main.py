@@ -1,8 +1,10 @@
 import tkinter as tk
 import math
-import threading
-import RPi.GPIO as GPIO
-import time
+import pickle
+import os
+# import threading
+# import RPi.GPIO as GPIO
+# import time
 
 PX_PER_FOOD = 8
 VERT_RES = 64
@@ -15,8 +17,19 @@ curr_color = 0
 
 pixels_remaining = 0
 
+board_state = [[color_palette[curr_color] for col in range(HORZ_RES)] for row in range(VERT_RES)]
+
+if not os.path.exists("history/history.pkl") or input("Reset history? (y/n) ").strip().lower()[0] == "y":
+    open("history/history.pkl", "w").close()
+
+
+def update_history():
+    with open("history/history.pkl", "ab+") as f:
+        pickle.dump(board_state, f)
+
+
 window = tk.Tk()
-window.attributes('-fullscreen', True)
+window.attributes("-fullscreen", True)
 window.title("Food for Pixels")
 
 height = window.winfo_screenheight()
@@ -63,7 +76,7 @@ palette_canvas.bind("<Button-1>", choose_color)
 count_frame = tk.Frame(window, bd=0, highlightthickness=0, height=height - palette_height, width=palette_width)
 count_frame.place(x=canvas_width, y=palette_height)
 tk.Label(count_frame, text="Pixels remaining: ", font="Helvetica 18").place(x=palette_width / 2, y=550, anchor="center")
-count_label = tk.Label(count_frame, text=pixels_remaining, font='Helvetica 96')
+count_label = tk.Label(count_frame, text=pixels_remaining, font="Helvetica 96")
 count_label.place(x=palette_width / 2, y=650, anchor="center")
 
 drawing_canvas = tk.Canvas(bd=0, highlightthickness=0, height=height, width=canvas_width, bg="white")
@@ -90,9 +103,15 @@ def increment_pixels_remaining():
     count_label["text"] = pixels_remaining
 
 
+def get_cell_coord(x, y):
+    coord_x = math.floor(x / px_size)
+    coord_y = math.floor(y / px_size)
+    return coord_x, coord_y
+
+
 def get_outline_px(x, y):
-    x0 = math.floor(x / px_size) * px_size
-    y0 = math.floor(y / px_size) * px_size
+    cell_coord = get_cell_coord(x, y)
+    x0, y0 = cell_coord[0] * px_size, cell_coord[1] * px_size
     return x0, y0, x0 + px_size, y0 + px_size
 
 
@@ -112,8 +131,11 @@ def moved(event):
 def draw(event):
     if not pixels_remaining:
         return
+    cell_coord = get_cell_coord(event.x, event.y)
     box = get_outline_px(event.x, event.y)
     drawing_canvas.create_rectangle(box[0], box[1], box[2], box[3], outline="", fill=color_palette[curr_color])
+    board_state[cell_coord[1]][cell_coord[0]] = color_palette[curr_color]
+    update_history()
     redraw_outline(box)
     decrement_pixels_remaining()
 
@@ -125,41 +147,40 @@ def sensed(_event):
 drawing_canvas.bind("<Motion>", moved)
 drawing_canvas.bind("<Button-1>", draw)
 
-# window.bind("<space>", sensed)  # mock with space bar for sensor detecting food
+window.bind("<space>", sensed)  # mock with space bar for sensor detecting food
 
-
-GPIO.setmode(GPIO.BCM)
-GPIO_TRIGGER = 18
-GPIO_ECHO = 24
-GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
-GPIO.setup(GPIO_ECHO, GPIO.IN)
-
-
-def distance():
-    GPIO.output(GPIO_TRIGGER, True)
-    time.sleep(0.00001)
-    GPIO.output(GPIO_TRIGGER, False)
-
-    StartTime = time.time()
-    StopTime = time.time()
-    while GPIO.input(GPIO_ECHO) == 0:
-        StartTime = time.time()
-    while GPIO.input(GPIO_ECHO) == 1:
-        StopTime = time.time()
-
-    TimeElapsed = StopTime - StartTime
-    return (TimeElapsed * 34300) / 2  # multiply with speed of sound (34300 cm/s), divide by 2 (there and back)
-
-
-def run_tk():
-    while True:
-        dist = distance()
-        print("Measured Distance = %.1f cm" % dist)
-        time.sleep(0.05)
-
-
-thread = threading.Thread(target=run_tk)
-thread.daemon = True
-thread.start()
+# GPIO.setmode(GPIO.BCM)
+# GPIO_TRIGGER = 18
+# GPIO_ECHO = 24
+# GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
+# GPIO.setup(GPIO_ECHO, GPIO.IN)
+#
+#
+# def distance():
+#     GPIO.output(GPIO_TRIGGER, True)
+#     time.sleep(0.00001)
+#     GPIO.output(GPIO_TRIGGER, False)
+#
+#     StartTime = time.time()
+#     StopTime = time.time()
+#     while GPIO.input(GPIO_ECHO) == 0:
+#         StartTime = time.time()
+#     while GPIO.input(GPIO_ECHO) == 1:
+#         StopTime = time.time()
+#
+#     TimeElapsed = StopTime - StartTime
+#     return (TimeElapsed * 34300) / 2  # multiply with speed of sound (34300 cm/s), divide by 2 (there and back)
+#
+#
+# def run_tk():
+#     while True:
+#         dist = distance()
+#         print("Measured Distance = %.1f cm" % dist)
+#         time.sleep(0.05)
+#
+#
+# thread = threading.Thread(target=run_tk)
+# thread.daemon = True
+# thread.start()
 
 window.mainloop()
