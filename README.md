@@ -12,8 +12,8 @@ All software requirements are included by default in the [Raspberry Pi OS](https
 
 ## Credits
 * [r/place](https://www.reddit.com/r/place/) for the inspiration and color palette
-* This project would not be possible were it not for open-source projects such as Python and TKinter
+* This project would not be possible were it not for open-source projects such as Python and Tkinter
 
-This project was created for the Skyline High School Technology Student Association's 2022 community service project.
+Pixels4Nibbles was created by [Nick Zhang](https://github.com/nicholasz2510) for the Skyline High School Technology Student Association's 2022 community service project.
 
 ### Licensed under the MIT License
