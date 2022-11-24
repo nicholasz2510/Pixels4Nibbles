@@ -2,9 +2,9 @@ import tkinter as tk
 import math
 import pickle
 import os
-# import threading
-# import RPi.GPIO as GPIO
-# import time
+import threading
+import RPi.GPIO as GPIO
+import time
 
 PX_PER_FOOD = 8
 VERT_RES = 64
@@ -167,38 +167,38 @@ for row in range(HORZ_RES):
         draw(row, col)
 curr_color = 0
 
-# GPIO.setmode(GPIO.BCM)
-# GPIO_TRIGGER = 18
-# GPIO_ECHO = 24
-# GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
-# GPIO.setup(GPIO_ECHO, GPIO.IN)
-#
-#
-# def distance():
-#     GPIO.output(GPIO_TRIGGER, True)
-#     time.sleep(0.00001)
-#     GPIO.output(GPIO_TRIGGER, False)
-#
-#     StartTime = time.time()
-#     StopTime = time.time()
-#     while GPIO.input(GPIO_ECHO) == 0:
-#         StartTime = time.time()
-#     while GPIO.input(GPIO_ECHO) == 1:
-#         StopTime = time.time()
-#
-#     TimeElapsed = StopTime - StartTime
-#     return (TimeElapsed * 34300) / 2  # multiply with speed of sound (34300 cm/s), divide by 2 (there and back)
-#
-#
-# def run_tk():
-#     while True:
-#         dist = distance()
-#         print("Measured Distance = %.1f cm" % dist)
-#         time.sleep(0.05)
-# TODO actually figure out how to parse sensor data once the sensor arrives
-#
-# thread = threading.Thread(target=run_tk)
-# thread.daemon = True
-# thread.start()
+GPIO.setmode(GPIO.BCM)
+GPIO_TRIGGER = 18
+GPIO_ECHO = 24
+GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
+GPIO.setup(GPIO_ECHO, GPIO.IN)
+
+
+def distance():
+    GPIO.output(GPIO_TRIGGER, True)
+    time.sleep(0.00001)
+    GPIO.output(GPIO_TRIGGER, False)
+
+    StartTime = time.time()
+    StopTime = time.time()
+    while GPIO.input(GPIO_ECHO) == 0:
+        StartTime = time.time()
+    while GPIO.input(GPIO_ECHO) == 1:
+        StopTime = time.time()
+
+    TimeElapsed = StopTime - StartTime
+    return (TimeElapsed * 34300) / 2  # multiply with speed of sound (34300 cm/s), divide by 2 (there and back)
+
+
+def run_sensor():
+    while True:
+        dist = distance()
+        print("Measured Distance = %.1f cm" % dist)
+        time.sleep(0.06)
+
+
+thread = threading.Thread(target=run_sensor)
+thread.daemon = True
+thread.start()
 
 window.mainloop()
