@@ -5,10 +5,16 @@ import os
 import threading
 import RPi.GPIO as GPIO
 import time
+import configparser
 
-PX_PER_FOOD = 8
-VERT_RES = 64
-HORZ_RES = 96
+config = configparser.ConfigParser()
+config.read("config.ini")
+user_config = config["Pixels4Nibbles"]
+PX_PER_FOOD = int(user_config["PxPerFood"])
+VERT_RES = int(user_config["VertRes"])
+HORZ_RES = int(user_config["HorzRes"])
+SENSOR_TIMING = float(user_config["SensorTiming"])
+CALIBRATION_IDLE_TIME = float(user_config["CalibrationIdleTime"])
 
 color_palette = ["#FFFFFF", "#E4E4E4", "#888888", "#222222", "#FFA7D1", "#E50000", "#E59500", "#A06A42", "#E5D900",
                  "#94E044", "#02BE01", "#00D3DD", "#0083C7", "#0000EA", "#CF6EE4", "#820080"]
@@ -17,18 +23,17 @@ curr_color = 0
 
 pixels_remaining = 0
 
+should_recalibrate_sensor = input("Recalibrate sensor? (y/n) ").strip().lower()[0] == "y"
+board_state = [[color_palette[curr_color] for col in range(HORZ_RES)] for row in range(VERT_RES)]
 if not os.path.exists("history/history.pkl") or input("Reset history? (y/n) ").strip().lower()[0] == "y":
     open("history/history.pkl", "w").close()
-    board_state = [[color_palette[curr_color] for col in range(HORZ_RES)] for row in range(VERT_RES)]
 else:
-    data = []
     with open("history/history.pkl", 'rb') as f:
         try:
             while True:
-                data.append(pickle.load(f))
+                board_state = pickle.load(f)
         except EOFError:
             pass
-    board_state = data[-1]
 
 
 def update_history():
@@ -191,10 +196,31 @@ def distance():
 
 
 def run_sensor():
+    if should_recalibrate_sensor:
+        sum_dists = 0
+        for i in range(int(CALIBRATION_IDLE_TIME / SENSOR_TIMING)):
+            sum_dists += distance()
+            time.sleep(SENSOR_TIMING)
+        avg_dist = sum_dists / int(CALIBRATION_IDLE_TIME / SENSOR_TIMING)
+        print("Average Measured Distance: %.1f cm" % avg_dist)
+
+        result = None
+        dists = []
+
+        def calibrating_threshold():
+            while result is None:
+                dists.append(distance())
+                time.sleep(SENSOR_TIMING)
+
+        calibrate_thread = threading.Thread(target=calibrating_threshold)
+        calibrate_thread.start()
+        result = input("Please insert a calibration item. Once you are done, press [Enter] ")
+        dist_threshold = min(dists) + ((avg_dist - min(dists)) / 2)
+        print("Threshold: %.1f cm" % dist_threshold)
     while True:
         dist = distance()
         print("Measured Distance = %.1f cm" % dist)
-        time.sleep(0.06)
+        time.sleep(SENSOR_TIMING)
 
 
 thread = threading.Thread(target=run_sensor)
