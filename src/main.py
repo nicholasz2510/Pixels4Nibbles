@@ -17,15 +17,23 @@ curr_color = 0
 
 pixels_remaining = 0
 
-board_state = [[color_palette[curr_color] for col in range(HORZ_RES)] for row in range(VERT_RES)]
-
 if not os.path.exists("history/history.pkl") or input("Reset history? (y/n) ").strip().lower()[0] == "y":
     open("history/history.pkl", "w").close()
+    board_state = [[color_palette[curr_color] for col in range(HORZ_RES)] for row in range(VERT_RES)]
+else:
+    data = []
+    with open("history/history.pkl", 'rb') as f:
+        try:
+            while True:
+                data.append(pickle.load(f))
+        except EOFError:
+            pass
+    board_state = data[-1]
 
 
 def update_history():
-    with open("history/history.pkl", "ab+") as f:
-        pickle.dump(board_state, f)
+    with open("history/history.pkl", "ab+") as pf:
+        pickle.dump(board_state, pf)
 
 
 window = tk.Tk()
@@ -109,34 +117,38 @@ def get_cell_coord(x, y):
     return coord_x, coord_y
 
 
-def get_outline_px(x, y):
-    cell_coord = get_cell_coord(x, y)
-    x0, y0 = cell_coord[0] * px_size, cell_coord[1] * px_size
+def get_outline_px(cell_x, cell_y):
+    x0, y0 = cell_x * px_size, cell_y * px_size
     return x0, y0, x0 + px_size, y0 + px_size
 
 
-def redraw_outline(box):
+def redraw_outline(cell_x, cell_y):
     global selection_outline
     drawing_canvas.delete(selection_outline)
+    box = get_outline_px(cell_x, cell_y)
     selection_outline = drawing_canvas.create_rectangle(box[0], box[1], box[2], box[3], outline="#000000")
 
 
 def moved(event):
     if not pixels_remaining:
         return
-    box = get_outline_px(event.x, event.y)
-    redraw_outline(box)
+    cell_coord = get_cell_coord(event.x, event.y)
+    redraw_outline(cell_coord[0], cell_coord[1])
 
 
-def draw(event):
+def draw(cell_x, cell_y):
+    box = get_outline_px(cell_x, cell_y)
+    drawing_canvas.create_rectangle(box[0], box[1], box[2], box[3], outline="", fill=color_palette[curr_color])
+
+
+def user_draw(event):
     if not pixels_remaining:
         return
     cell_coord = get_cell_coord(event.x, event.y)
-    box = get_outline_px(event.x, event.y)
-    drawing_canvas.create_rectangle(box[0], box[1], box[2], box[3], outline="", fill=color_palette[curr_color])
+    draw(cell_coord[0], cell_coord[1])
     board_state[cell_coord[1]][cell_coord[0]] = color_palette[curr_color]
     update_history()
-    redraw_outline(box)
+    redraw_outline(cell_coord[0], cell_coord[1])
     decrement_pixels_remaining()
 
 
@@ -145,9 +157,15 @@ def sensed(_event):
 
 
 drawing_canvas.bind("<Motion>", moved)
-drawing_canvas.bind("<Button-1>", draw)
+drawing_canvas.bind("<Button-1>", user_draw)
 
 window.bind("<space>", sensed)  # mock with space bar for sensor detecting food
+
+for row in range(HORZ_RES):
+    for col in range(VERT_RES):
+        curr_color = color_palette.index(board_state[col][row])
+        draw(row, col)
+curr_color = 0
 
 # GPIO.setmode(GPIO.BCM)
 # GPIO_TRIGGER = 18
