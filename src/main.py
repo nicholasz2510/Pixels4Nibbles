@@ -169,14 +169,19 @@ def user_draw(event):
     decrement_pixels_remaining()
 
 
-def sensed(_event=None):
+def sensed(_event):
     increment_pixels_remaining()
     kaching_sound.play()
+
+
+def sensor_activate():
+    window.event_generate("<<sensed>>", when="tail")
 
 
 drawing_canvas.bind("<Motion>", moved)
 drawing_canvas.bind("<Button-1>", user_draw)
 
+window.bind("<<sensed>>", sensed)
 window.bind("<space>", sensed)  # mock with space bar for sensor detecting food
 
 for row in range(HORZ_RES):
@@ -243,7 +248,7 @@ def run_sensor():
     while True:
         dist = distance()
         if dist < dist_threshold:
-            sensed()
+            sensor_activate()
             time.sleep(ITEM_COOLDOWN - SENSOR_TIMING)
         time.sleep(SENSOR_TIMING)
 
