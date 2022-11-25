@@ -47,8 +47,8 @@ def update_history():
 
 
 mixer.init()
-mixer.music.load("assets/cash-register-sound.mp3")
-mixer.music.set_volume(1)
+kaching_sound = mixer.Sound("assets/cash-register-sound.mp3")
+click_sound = mixer.Sound("assets/click.mp3")
 
 window = tk.Tk()
 window.attributes("-fullscreen", True)
@@ -160,6 +160,7 @@ def user_draw(event):
         return
     cell_coord = get_cell_coord(event.x, event.y)
     draw(cell_coord[0], cell_coord[1])
+    click_sound.play()
     board_state[cell_coord[1]][cell_coord[0]] = color_palette[curr_color]
     update_history()
     redraw_outline(cell_coord[0], cell_coord[1])
@@ -168,7 +169,7 @@ def user_draw(event):
 
 def sensed(_event=None):
     increment_pixels_remaining()
-    mixer.music.play()
+    kaching_sound.play()
 
 
 drawing_canvas.bind("<Motion>", moved)
