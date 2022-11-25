@@ -14,6 +14,7 @@ PX_PER_FOOD = int(user_config["PxPerFood"])
 VERT_RES = int(user_config["VertRes"])
 HORZ_RES = int(user_config["HorzRes"])
 SENSOR_TIMING = float(user_config["SensorTiming"])
+ITEM_COOLDOWN = float(user_config["ItemCooldown"])
 CALIBRATION_IDLE_TIME = float(user_config["CalibrationIdleTime"])
 
 color_palette = ["#FFFFFF", "#E4E4E4", "#888888", "#222222", "#FFA7D1", "#E50000", "#E59500", "#A06A42", "#E5D900",
@@ -23,8 +24,9 @@ curr_color = 0
 
 pixels_remaining = 0
 
-should_recalibrate_sensor = input("Recalibrate sensor? (y/n) ").strip().lower()[0] == "y"
 board_state = [[color_palette[curr_color] for col in range(HORZ_RES)] for row in range(VERT_RES)]
+
+should_recalibrate_sensor = input("Recalibrate sensor? (y/n) ").strip().lower()[0] == "y"
 if not os.path.exists("history/history.pkl") or input("Reset history? (y/n) ").strip().lower()[0] == "y":
     open("history/history.pkl", "w").close()
 else:
@@ -157,7 +159,7 @@ def user_draw(event):
     decrement_pixels_remaining()
 
 
-def sensed(_event):
+def sensed(_event=None):
     increment_pixels_remaining()
 
 
@@ -173,10 +175,13 @@ for row in range(HORZ_RES):
 curr_color = 0
 
 GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False) 
 GPIO_TRIGGER = 18
 GPIO_ECHO = 24
 GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
 GPIO.setup(GPIO_ECHO, GPIO.IN)
+
+calibration_config = config["Calibration"]
 
 
 def distance():
@@ -196,7 +201,9 @@ def distance():
 
 
 def run_sensor():
+    dist_threshold = float(calibration_config["Threshold"])
     if should_recalibrate_sensor:
+        print("Measuring distance without items... ")
         sum_dists = 0
         for i in range(int(CALIBRATION_IDLE_TIME / SENSOR_TIMING)):
             sum_dists += distance()
@@ -217,9 +224,16 @@ def run_sensor():
         result = input("Please insert a calibration item. Once you are done, press [Enter] ")
         dist_threshold = min(dists) + ((avg_dist - min(dists)) / 2)
         print("Threshold: %.1f cm" % dist_threshold)
+        calibration_config["Threshold"] = str(dist_threshold)
+
+        with open("config.ini", "w") as cf:
+            config.write(cf)
+
     while True:
         dist = distance()
-        print("Measured Distance = %.1f cm" % dist)
+        if dist < dist_threshold:
+            sensed()
+            time.sleep(ITEM_COOLDOWN - SENSOR_TIMING)
         time.sleep(SENSOR_TIMING)
 
 
