@@ -159,6 +159,8 @@ def user_draw(event):
     if not pixels_remaining:
         return
     cell_coord = get_cell_coord(event.x, event.y)
+    if board_state[cell_coord[1]][cell_coord[0]] == color_palette[curr_color]:
+        return
     draw(cell_coord[0], cell_coord[1])
     click_sound.play()
     board_state[cell_coord[1]][cell_coord[0]] = color_palette[curr_color]
