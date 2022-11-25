@@ -3,9 +3,12 @@ import math
 import pickle
 import os
 import threading
-import RPi.GPIO as GPIO
 import time
 import configparser
+import RPi.GPIO as GPIO
+from pygame import mixer
+
+os.system("cls" if os.name == "nt" else "clear")
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -30,7 +33,7 @@ should_recalibrate_sensor = input("Recalibrate sensor? (y/n) ").strip().lower()[
 if not os.path.exists("history/history.pkl") or input("Reset history? (y/n) ").strip().lower()[0] == "y":
     open("history/history.pkl", "w").close()
 else:
-    with open("history/history.pkl", 'rb') as f:
+    with open("history/history.pkl", "rb") as f:
         try:
             while True:
                 board_state = pickle.load(f)
@@ -42,6 +45,10 @@ def update_history():
     with open("history/history.pkl", "ab+") as pf:
         pickle.dump(board_state, pf)
 
+
+mixer.init()
+mixer.music.load("assets/cash-register-sound.mp3")
+mixer.music.set_volume(1)
 
 window = tk.Tk()
 window.attributes("-fullscreen", True)
@@ -161,6 +168,7 @@ def user_draw(event):
 
 def sensed(_event=None):
     increment_pixels_remaining()
+    mixer.music.play()
 
 
 drawing_canvas.bind("<Motion>", moved)
@@ -175,7 +183,7 @@ for row in range(HORZ_RES):
 curr_color = 0
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False) 
+GPIO.setwarnings(False)
 GPIO_TRIGGER = 18
 GPIO_ECHO = 24
 GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
