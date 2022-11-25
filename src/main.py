@@ -47,8 +47,8 @@ def update_history():
 
 
 mixer.init()
-kaching_sound = mixer.Sound("assets/cash-register-sound.mp3")
-click_sound = mixer.Sound("assets/click.mp3")
+kaching_sound = mixer.Sound("assets/cash-register-sound.ogg")
+click_sound = mixer.Sound("assets/click.ogg")
 
 window = tk.Tk()
 window.attributes("-fullscreen", True)
